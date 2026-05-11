@@ -43,11 +43,6 @@ Projet réalisé en équipe dans le cadre du BUT Informatique
 
 ## Lancer le projet
 
-```bash
-pip install -r requirements.txt
 python app.py
-```
 
 Ouvrir ensuite http://127.0.0.1:5000 dans un navigateur.
-
-## Structure
