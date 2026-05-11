@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADM | {{ title }}</title>
+    
+    <!-- Favicon de la page -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+    
+    <!-- Feuille de style principale de l'application -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    
+</head>
+<body>
+    <!-- Le header contient le menu de navigation et est partagé avec toutes les pages -->
+    {% include 'header.html' %}
+    
+    <div class="game-container">
+        
+        <div class="game-info">
+            <h2>Jeu démographique du Plus ou Moins</h2>
+            <p>Testez vos connaissances sur les données de population mondiale</p>
+        </div>
+        
+        <!-- ========== SÉLECTION DU TYPE DE JEU ========== -->
+        <div class="game-types">
+            <a href="/game?game=region_population&new=1" 
+               class="game-type-button {% if game_type == 'region_population' %}active{% endif %}">
+                 Population par région
+            </a>
+            
+            <a href="/game?game=country_population&new=1" 
+               class="game-type-button {% if game_type == 'country_population' %}active{% endif %}">
+                 Population par pays
+            </a>
+            
+            <a href="/game?game=europe_density&new=1" 
+               class="game-type-button {% if game_type == 'europe_density' %}active{% endif %}">
+                🇪🇺 Densité européenne
+            </a>
+        </div>
+        
+        <!-- Règles du jeu -->
+        <div class="rules">
+            <h3> Règles du jeu</h3>
+            <ul>
+                <li>Une question sur les données démographiques vous est posée</li>
+                <li>Vous avez {{ data.max_attempts }} essais pour trouver la réponse</li>
+                <li>Après chaque proposition, vous saurez si la valeur est plus grande ou plus petite</li>
+                <li>La réponse doit être en <strong>{{ data.unit }}</strong></li>
+                <li>Bonne chance !</li>
+            </ul>
+        </div>
+        
+        <!-- Affichage de la question -->
+        <div class="question-box">
+            {{ data.question }}
+        </div>
+        
+        <!-- Boîte d'indices -->
+        <div class="hint-box">
+             Indice : La réponse est entre {{ data.hint_min }} et {{ data.hint_max }} {{ data.unit }}
+        </div>
+        
+        <!-- Compteur de tentatives -->
+        <div class="attempts-counter">
+            Essais : {{ data.attempts }} / {{ data.max_attempts }}
+        </div>
+        
+        <!-- Affichage des messages -->
+        {% if data.message %}
+            <div class="message {% if data.won %}success{% elif data.game_over %}error{% else %}info{% endif %}">
+                {{ data.message }}
+            </div>
+        {% endif %}
+        
+        <!-- Formulaire du jeu -->
+        {% if not data.game_over %}
+            <form class="game-form" action="/game" method="get">
+                <input type="hidden" name="game" value="{{ game_type }}">
+                
+                <input 
+                    type="number"
+                    name="guess"
+                    class="game-input"
+                    placeholder="Votre réponse"
+                    step="0.1"
+                    required
+                    autofocus
+                >
+                
+                <span style="margin: 0 10px; font-weight: bold;">{{ data.unit }}</span>
+                
+                <button type="submit" class="game-button">Valider</button>
+                
+                <a href="/game?game={{ game_type }}&new=1" 
+                   class="game-button new-game-button" 
+                   style="text-decoration: none; display: inline-block;">
+                    Nouvelle question
+                </a>
+            </form>
+            
+        {% else %}
+            <!-- Écran de fin de partie -->
+            <div class="game-form">
+                <a href="/game?game={{ game_type }}&new=1" 
+                   class="game-button new-game-button" 
+                   style="text-decoration: none; display: inline-block; padding: 12px 30px;">
+                    🔄 Rejouer
+                </a>
+            </div>
+        {% endif %}
+        
+        <!-- Historique des tentatives -->
+        {% if data.history %}
+            <div class="history-container">
+                <h3> Historique des tentatives</h3>
+                
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Essai n°</th>
+                            <th>Votre réponse ({{ data.unit }})</th>
+                            <th>Indice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in data.history %}
+                            <tr>
+                                <td>{{ entry.attempt }}</td>
+                                <td>{{ entry.guess }}</td>
+                                <td>{{ entry.hint }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+        
+    </div>
+</body>
+</html>

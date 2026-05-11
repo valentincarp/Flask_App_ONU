@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+    <!-- Titre de l'onglet de la page -->
+    <title>ADM | {{ title }}</title>
+    
+    <!-- Favicon de la page -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+    
+    <!-- Stylesheet local pour le style de la page -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    
+    <!-- Stylesheet pour DataTables, récupéré depuis cdn.net -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.css" />
+    
+    <!-- Stylesheet pour Leaflet.js, utilisé pour les cartes interactives -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    
+    <!-- Script pour Leaflet.js -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <!-- A noter : Les balise non HTML présentes dans cette page sont utilisées par Jinja2 pour l'injection de
+     contenu dynamique depuis le serveur Flask. Ces balises permettent d'insérer des variables et des structures de contrôle
+     dans le HTML. Elles sont spécifiques à Jinja2 et ne sont pas interprétées par le navigateur, mais par le moteur de template
+     Jinja2 en backend de l'application Flask. La page HTML générée et nettoyée des balises Jinja2 par le serveur Flask est
+     ensuite envoyée au navigateur pour affichage.
+    -->
+
+    <!-- Cette page est structurée de la manière suivante : 
+        1 - Cette entête HTML <head> avec les métadonnées, les liens vers les stylesheets et les scripts nécessaires.
+        2 - Le corps <body> de la page divisé en plusieurs sections :    
+            a - Un "header" (voir header.html) intégré dynamiquement depuis l'extérieur et composé d'un bandeau avec le titre principal
+                et un menu de navigation. Ce header inclut également un sous-menu pour basculer entre les vues tableau et graphe (ou carte pour l'Europe).
+            b - Le contenu principal qui affiche soit un tableau de données, soit un graphe, soit une carte, soit des informations "à propos".
+            c - Des scripts JavaScript pour activer les fonctionnalités de DataTables.
+     Chaque section est clairement délimitée par des commentaires HTML pour faciliter la lecture et la maintenance du code.
+    -->
+
+</head>
+<body>
+    <!-- Insertion du header (bandeau et menu de navigation) -->
+    {% include 'header.html' %}
+    <div style="text-align: center; margin: 20px;">
+    <a href="{{ url_for('export.download_csv', query=query_type, year=2023) }}" 
+       style="background-color: #12c821; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+       Télécharger les données (CSV)
+    </a>
+</div>
+
+    <!-- Affichage du tableau, du graphe, ou des informations "à propos" selon le type de vue sélectionné -->
+    {% if view_type == 'table' %}
+        <!-- Affichage du tableau de données -->
+        <table id="dataTable" class="display" width="100%">
+            <thead>
+                <tr>
+                    {% for header in headers %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if query_type == 'world' %}
+                <!-- Tableau des populations mondiales par année et par sexe -->
+                    {% for year, population_H, population_F, population_totale in data %}
+                        <tr>
+                            <td>{{ year }}</td>
+                            <td>{{ "{:,.0f}".format(population_H).replace(',','') }}</td>
+                            <td>{{ "{:,.0f}".format(population_F).replace(',','') }}</td>
+                            <td>{{ "{:,.0f}".format(population_totale).replace(',','') }}</td>
+                        </tr>
+                    {% endfor %}
+                {% elif query_type == 'region' %}
+                <!-- Tableau des populations par région et par année -->
+                    {% for region, year, population in data %}
+                        <tr>
+                            <td>{{ region }}</td>
+                            <td>{{ year }}</td>
+                            <td>{{ "{:,.0f}".format(population).replace(',','') }}</td>
+                        </tr>
+                    {% endfor %}
+                {% elif query_type == 'top10' %}
+                <!-- Tableau des 10 pays les plus peuplés par année -->
+                    {% for year, country, subregion, region, continent, population in data %}
+                        <tr>
+                            <td>{{ year }}</td>
+                            <td>{{ country }}</td>
+                            <td>{{ subregion }}</td>
+                            <td>{{ region }}</td>
+                            <td>{{ continent }}</td>
+                            <td>{{ "{:,.0f}".format(population).replace(',','') }}</td>
+                        </tr>
+                    {% endfor %}
+                {% elif query_type == 'europe' %}
+                <!-- Tableau des populations et densités par pays européen et par année -->
+                    {% for year, country, population, density in data %}
+                        <tr>
+                            <td>{{ year }}</td>
+                            <td>{{ country }}</td>
+                            <td>{{ "{:,.0f}".format(population).replace(',','') }}</td>
+                            <td>{{ "{:,.2f}".format(density).replace(',','').replace('.',',') }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+
+    {% elif view_type == 'graph' and plot_html %}
+    <!-- Affichage du graphe -->
+        <div class="plot-container">
+            {{ plot_html | safe }}
+        </div>
+
+    {% elif (view_type == 'pop_map' or view_type == 'dens_map') and plot_html %}
+    <!-- Affichage de la carte -->
+        <div class="map-container">
+            {{ plot_html | safe }}
+        </div>
+
+    {% elif query_type == 'about' %}
+    <!-- Affichage des informations "à propos" -->
+        <div class="about-container">
+            <table id="aboutTable" class="display">
+                <tbody>
+                    {% for item in data %}
+                        <tr>
+                            <td><strong>{{ item[0] }}</strong></td>
+                            <td>{{ item[1]|safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+    {% endif %}
+
+    <!-- Scripts pour l'utilisation de DataTables (code JavaScript) -->
+    <!-- Import de JQuery pour l'utilisation de DataTables -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Import de DataTables depuis cdn.net -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.js"></script>
+    <script>
+        // Initialisation de DataTables avec la langue française
+        // et les fonctionnalités de pagination, recherche, tri et info
+        // appliquées au tableau avec l'ID 'dataTable' lorsque le document est prêt
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json"
+                },
+                responsive: true,
+                paging: true,
+            })
+        });
+    </script>
+</body>
+</html>

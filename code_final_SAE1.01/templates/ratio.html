@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADM | {{ title }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+    
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.css" />
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <div style="margin: 20px; text-align: center; background-color: #f4f4f4; padding: 15px; border-bottom: 1px solid #ccc;">
+        <form method="GET" action="/ratio">
+            <input type="hidden" name="query" value="ratio">
+            <input type="hidden" name="view" value="{{ view_type }}">
+            
+            <label for="year-select"><strong>Choisir une année :</strong></label>
+            <select id="year-select" name="year" onchange="this.form.submit()">
+                {% for year in available_years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                        {{ year }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div style="padding: 20px;">
+        {% if view_type == 'graph' and plot_html %}
+            <div class="plot-container">
+                {{ plot_html | safe }}
+            </div>
+        {% else %}
+            <table id="dataTable" class="display" width="100%">
+                <thead>
+                    <tr>
+                        {% for header in headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                        <tr>
+                            <td><strong>{{ row[0] }}</strong></td> <td>{{ row[1] }}</td> <td>{{ "{:.2f}".format(row[2]) }} %</td> <td>{{ "{:.2f}".format(row[3]) }} %</td> </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+    <div style="text-align: right; margin: 10px 20px;">
+    <a href="{{ url_for('export.download_csv', query='ratio', year=selected_year) }}" 
+       style="background-color: #28a745; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; font-family: sans-serif;">
+       Télécharger CSV
+    </a>
+</div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                language: { url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json" },
+                responsive: true,
+                paging: true
+            })
+        });
+    </script>
+</body>
+</html>

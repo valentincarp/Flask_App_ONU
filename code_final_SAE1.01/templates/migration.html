@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADM | {{ title }}</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.css">
+    
+</head>
+
+<body>
+
+    {% include 'header.html' %}
+    <div style="text-align: center; margin: 20px;">
+    <a href="{{ url_for('export.download_csv', query='migration') }}" 
+       style="background-color: #23bd44; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+       Télécharger les données Migration
+    </a>
+</div>
+    <div class="dashboard_container">
+        <h1>{{ title }}</h1>
+
+        {% if view_type == 'table' %}
+            <!-- Filtres pour le tableau -->
+            <div class="filter-container">
+                <form method="GET" action="/migration">
+                    <input type="hidden" name="view" value="table">
+                    
+                    <div class="filter-group">
+                        <label for="countries">Pays (Ctrl pour sélection multiple) :</label>
+                        <select name="countries" id="countries" multiple size="5">
+                            {% for country_name, country_code in countries %}
+                                <option value="{{ country_code }}" 
+                                        {% if country_code in selected_countries %}selected{% endif %}>
+                                    {{ country_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="year_start">Année de début :</label>
+                        <input type="number" name="year_start" id="year_start" 
+                               min="1950" max="2023" 
+                               placeholder="1950"
+                               value="{{ year_start }}">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="year_end">Année de fin :</label>
+                        <input type="number" name="year_end" id="year_end" 
+                               min="1950" max="2023" 
+                               placeholder="2023"
+                               value="{{ year_end }}">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button type="submit">Filtrer</button>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <a href="/migration?view=table">
+                            <button type="button" class="reset">Réinitialiser</button>
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            {% if data|length == 0 %}
+                <p class="no-data"> Aucune donnée disponible pour ces critères.</p>
+            {% else %}
+                <table id="dataTable" class="display" width="100%">
+                    <thead>
+                        <tr>
+                            <th>Année</th>
+                            <th>Taux de migration (pour 1 000 hab.)</th>
+                            <th>Pays / Région</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for annee, taux, pays in data %}
+                        <tr>
+                            <td>{{ annee }}</td>
+                            <td>{{ taux if taux is not none else 'N/A' }}</td>
+                            <td>{{ pays }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+        {% elif view_type == 'graph' %}
+            <!-- Filtres pour le graphique -->
+            <div class="filter-container">
+                <form method="GET" action="/migration">
+                    <input type="hidden" name="view" value="graph">
+                    
+                    <div class="filter-group">
+                        <label for="year">Année :</label>
+                        <select name="year" id="year">
+                            {% for year in available_years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                                    {{ year }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="top_n">Nombre de pays :</label>
+                        <select name="top_n" id="top_n">
+                            <option value="6" {% if top_n == 6 %}selected{% endif %}>6</option>
+                            <option value="8" {% if top_n == 8 %}selected{% endif %}>8</option>
+                            <option value="10" {% if top_n == 10 %}selected{% endif %}>10</option>
+                            <option value="12" {% if top_n == 12 %}selected{% endif %}>12</option>
+                            <option value="15" {% if top_n == 15 %}selected{% endif %}>15</option>
+                            <option value="20" {% if top_n == 20 %}selected{% endif %}>20</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <button type="submit">Actualiser</button>
+                    </div>
+                </form>
+            </div>
+            
+            {% if plot_html %}
+                <div class="plot-container">
+                    {{ plot_html | safe }}
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- JS DataTables -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json"
+                },
+                responsive: true,
+                paging: true,
+                order: [[0, 'desc']]
+            });
+        });
+    </script>
+    
+
+</body>
+</html>

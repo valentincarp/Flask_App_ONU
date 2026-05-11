@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>ADM | {{ title }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
+    
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.css" />
+    
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    
+    {% include 'header.html' %}
+
+    <div class="content-container" style="padding: 20px;">
+        <h2 style="text-align: center; margin-bottom: 20px;">{{ title }}</h2>
+
+        {% if view_type == 'table' %}
+            <table id="dataTable" class="display" width="100%">
+                <thead>
+                    <tr>
+                        {% for header in headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if kind == 'world' %}
+                        {% for y, p, t in data %}
+                        <tr><td>{{ y }}</td><td>{{ "{:,.0f}".format(p).replace(',',' ') }}</td><td>{{ t }}</td></tr>
+                        {% endfor %}
+                    
+                    {% elif kind == 'region' %}
+                        {% for r, y, p, t in data %}
+                        <tr><td>{{ r }}</td><td>{{ y }}</td><td>{{ "{:,.0f}".format(p).replace(',',' ') }}</td><td>{{ t }}</td></tr>
+                        {% endfor %}
+
+                    {% elif kind == 'europe' %}
+                        {% for y, p, d, t in data %}
+                        <tr><td>{{ y }}</td><td>{{ "{:,.0f}".format(p).replace(',',' ') }}</td><td>{{ "{:,.2f}".format(d).replace('.',',') }}</td><td>{{ t }}</td></tr>
+                        {% endfor %}
+                    
+                    {% elif kind == 'vital' %}
+                        {% for y, b, d, t in data %}
+                        <tr><td>{{ y }}</td><td>{{ "{:,.2f}".format(b).replace('.',',') }}</td><td>{{ "{:,.2f}".format(d).replace('.',',') }}</td><td>{{ t }}</td></tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+
+        {% elif view_type == 'graph' and plot_html %}
+            <div class="plot-container">
+                {{ plot_html | safe }}
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                language: { url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json" },
+                responsive: true,
+                paging: true,
+                "order": [] 
+            })
+        });
+    </script>
+</body>
+</html>

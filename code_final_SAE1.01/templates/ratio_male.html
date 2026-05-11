@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADM – Ratio Hommes/Femmes</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Stylesheet pour DataTables, récupéré depuis cdn.net -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.css">
+    
+    <!-- Import de Plotly pour le diagramme donut -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+</head>
+
+<body>
+
+    {% include 'header.html' %}
+    <div style="text-align: center; margin: 20px;">
+    <a href="{{ url_for('export.download_csv', query='ratio_country', year=2023) }}" 
+       style="background-color: #333; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+       Télécharger Ratio Détail
+    </a>
+</div>
+    <!-- VUE TABLEAU (affichée si view_type == 'table') -->
+    {% if view_type == 'table' %}
+    
+    <!-- Conteneur pour les menus déroulants -->
+    <div class="controls-container">
+        <!-- Menu 1 : Niveau géographique -->
+        <div class="control-group">
+            <label for="geo-level-select-table">Niveau géographique :</label>
+            <select id="geo-level-select-table">
+                <option value="country">Pays</option>
+                <option value="region">Région</option>
+                <option value="subregion">Sous-région</option>
+            </select>
+        </div>
+        
+        <!-- Menu 2 : Sélection du lieu (optionnel pour filtrage) -->
+        <div class="control-group">
+            <label for="location-select-table">Filtrer par lieu (optionnel) :</label>
+            <select id="location-select-table">
+                <option value="">-- Tous --</option>
+            </select>
+        </div>
+        
+        <!-- Menu 3 : Année (optionnel pour filtrage) -->
+        <div class="control-group">
+            <label for="year-select-table">Filtrer par année (optionnel) :</label>
+            <select id="year-select-table">
+                <option value="">-- Toutes --</option>
+                {% for year in years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table id="dataTable" class="display">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Nom</th>
+                    <th>Année</th>
+                    <th>Ratio à la naissance (H/F)</th>
+                    <th>Ratio population (H/F)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Les données seront chargées dynamiquement -->
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+    <!-- VUE DIAGRAMME DONUT (affichée si view_type == 'pie') -->
+    {% if view_type == 'pie' %}
+    
+    <!-- Conteneur pour les menus déroulants -->
+    <div class="controls-container">
+        <!-- Menu 1 : Niveau géographique -->
+        <div class="control-group">
+            <label for="geo-level-select">Niveau géographique :</label>
+            <select id="geo-level-select">
+                <option value="country">Pays</option>
+                <option value="region">Région</option>
+                <option value="subregion">Sous-région</option>
+            </select>
+        </div>
+        
+        <!-- Menu 2 : Sélection du lieu (pays/région/sous-région) -->
+        <div class="control-group">
+            <label for="location-select">Sélectionner :</label>
+            <select id="location-select">
+                <option value="">-- Choisir --</option>
+            </select>
+        </div>
+        
+        <!-- Menu 3 : Année -->
+        <div class="control-group">
+            <label for="year-select">Sélectionner une année :</label>
+            <select id="year-select">
+                <option value="">-- Choisir une année --</option>
+                {% for year in years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <!-- Message d'information ou d'erreur -->
+    <div id="info-message" class="info-message">
+        Veuillez sélectionner un niveau géographique, un lieu et une année pour voir le diagramme
+    </div>
+    
+    <!-- Conteneur pour le graphique Plotly -->
+    <div id="plotly-chart"></div>
+    
+    {% endif %}
+
+
+    <!-- SCRIPTS JAVASCRIPT -->    
+    {% if view_type == 'table' %}
+    <!-- Scripts pour DataTables et gestion dynamique -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.js"></script>
+    
+    <!-- Données passées depuis Flask -->
+    <script id="countries-data-table" type="application/json">{{ countries|tojson }}</script>
+    <script id="regions-data-table" type="application/json">{{ regions|tojson }}</script>
+    <script id="subregions-data-table" type="application/json">{{ subregions|tojson }}</script>
+    
+    <script>
+        // Données passées depuis Flask
+        const countriesDataTable = JSON.parse(document.getElementById('countries-data-table').textContent);
+        const regionsDataTable = JSON.parse(document.getElementById('regions-data-table').textContent);
+        const subregionsDataTable = JSON.parse(document.getElementById('subregions-data-table').textContent);
+        
+        // Récupération des éléments HTML
+        const geoLevelSelectTable = document.getElementById('geo-level-select-table');
+        const locationSelectTable = document.getElementById('location-select-table');
+        const yearSelectTable = document.getElementById('year-select-table');
+        
+        let dataTableInstance = null;
+        
+        // Fonction pour mettre à jour la liste des lieux
+        function updateLocationListTable() {
+            const geoLevel = geoLevelSelectTable.value;
+            
+            // Vider la liste actuelle
+            locationSelectTable.innerHTML = '<option value="">-- Tous --</option>';
+            
+            // Sélectionner les bonnes données selon le niveau
+            let dataList = [];
+            if (geoLevel === 'country') {
+                dataList = countriesDataTable;
+            } else if (geoLevel === 'region') {
+                dataList = regionsDataTable;
+            } else if (geoLevel === 'subregion') {
+                dataList = subregionsDataTable;
+            }
+            
+            // Remplir la liste avec les nouvelles options
+            dataList.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                locationSelectTable.appendChild(option);
+            });
+            
+            // Recharger le tableau
+            loadTableData();
+        }
+        
+        // Fonction pour charger les données du tableau
+        function loadTableData() {
+            const geoLevel = geoLevelSelectTable.value;
+            const location = locationSelectTable.value;
+            const year = yearSelectTable.value;
+            
+            // Construire l'URL de l'API avec les paramètres
+            let url = `/api/ratio_male_table?geo_level=${geoLevel}`;
+            if (location) url += `&location=${encodeURIComponent(location)}`;
+            if (year) url += `&year=${year}`;
+            
+            // Appel AJAX vers l'API Flask
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Détruire l'instance DataTable existante si elle existe
+                        if (dataTableInstance) {
+                            dataTableInstance.destroy();
+                        }
+                        
+                        // Vider le tbody
+                        const tbody = document.querySelector('#dataTable tbody');
+                        tbody.innerHTML = '';
+                        
+                        // Remplir le tableau avec les nouvelles données
+                        data.data.forEach(row => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${row.country_code}</td>
+                                <td>${row.country_name}</td>
+                                <td>${row.year}</td>
+                                <td>${row.sex_ratio_birth.toFixed(2)}</td>
+                                <td>${row.sex_ratio_population.toFixed(2)}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        
+                        // Réinitialiser DataTable
+                        dataTableInstance = $('#dataTable').DataTable({
+                            language: {
+                                url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json"
+                            },
+                            responsive: true,
+                            paging: true,
+                        });
+                    } else {
+                        console.error('Erreur:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des données:', error);
+                });
+        }
+        
+        // Écouteurs d'événements
+        geoLevelSelectTable.addEventListener('change', updateLocationListTable);
+        locationSelectTable.addEventListener('change', loadTableData);
+        yearSelectTable.addEventListener('change', loadTableData);
+        
+        // Initialisation au chargement de la page
+        $(document).ready(function() {
+            updateLocationListTable();
+        });
+    </script>
+    {% endif %}
+    
+
+    {% if view_type == 'pie' %}
+    <!-- Scripts pour le diagramme donut Plotly -->
+    <script id="countries-data" type="application/json">{{ countries|tojson }}</script>
+    <script id="regions-data" type="application/json">{{ regions|tojson }}</script>
+    <script id="subregions-data" type="application/json">{{ subregions|tojson }}</script>
+    <script>
+        // Données passées depuis Flask (listes des pays, régions, sous-régions)      
+        const countriesData  = JSON.parse(document.getElementById('countries-data').textContent);
+        const regionsData    = JSON.parse(document.getElementById('regions-data').textContent);
+        const subregionsData = JSON.parse(document.getElementById('subregions-data').textContent);
+
+        
+        // Récupération des éléments HTML
+        const geoLevelSelect = document.getElementById('geo-level-select');
+        const locationSelect = document.getElementById('location-select');
+        const yearSelect = document.getElementById('year-select');
+        const infoMessage = document.getElementById('info-message');
+        const plotlyChart = document.getElementById('plotly-chart');
+        
+        // Fonction pour afficher un message d'information
+        function showMessage(message, isError = false) {
+            infoMessage.textContent = message;
+            infoMessage.style.display = 'block';
+            infoMessage.style.backgroundColor = isError ? '#ffebee' : '#e3f2fd';
+            infoMessage.style.color = isError ? '#c62828' : '#1976d2';
+        }
+        
+        // Fonction pour masquer le message
+        function hideMessage() {
+            infoMessage.style.display = 'none';
+        }
+        
+        // Fonction pour mettre à jour la liste des lieux selon le niveau géographique sélectionné
+        function updateLocationList() {
+            const geoLevel = geoLevelSelect.value;
+            
+            // Vider la liste actuelle
+            locationSelect.innerHTML = '<option value="">-- Choisir --</option>';
+            
+            // Sélectionner les bonnes données selon le niveau
+            let dataList = [];
+            if (geoLevel === 'country') {
+                dataList = countriesData;
+            } else if (geoLevel === 'region') {
+                dataList = regionsData;
+            } else if (geoLevel === 'subregion') {
+                dataList = subregionsData;
+            }
+            
+            // Remplir la liste avec les nouvelles options
+            dataList.forEach(location => {
+                const option = document.createElement('option');
+                option.value = location;
+                option.textContent = location;
+                locationSelect.appendChild(option);
+            });
+            
+            // Effacer le graphique précédent
+            plotlyChart.innerHTML = '';
+            showMessage('Veuillez sélectionner un lieu et une année', false);
+        }
+        
+        // Fonction pour charger et afficher le graphique Plotly
+        function loadChart() {
+            const geoLevel = geoLevelSelect.value;
+            const location = locationSelect.value;
+            const year = yearSelect.value;
+            
+            // Vérifier que toutes les sélections sont faites
+            if (!location || !year) {
+                if (!location && !year) {
+                    showMessage('Veuillez sélectionner un lieu et une année', false);
+                } else if (!location) {
+                    showMessage('Veuillez sélectionner un lieu', false);
+                } else {
+                    showMessage('Veuillez sélectionner une année', false);
+                }
+                plotlyChart.innerHTML = '';
+                return;
+            }
+            
+            // Afficher un message de chargement
+            showMessage('Chargement des données...', false);
+            
+            // Appel AJAX vers l'API Flask
+            fetch(`/api/ratio_male_chart?geo_level=${geoLevel}&location=${encodeURIComponent(location)}&year=${year}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Parser le JSON du graphique Plotly
+                        const graphData = JSON.parse(data.graphJSON);
+                        
+                        // Afficher le graphique dans le div 'plotly-chart'
+                        Plotly.newPlot('plotly-chart', graphData.data, graphData.layout, {
+                            responsive: true,
+                            displayModeBar: true,
+                            displaylogo: false,
+                            modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d']
+                        });
+                        
+                        // Afficher les informations détaillées
+                        showMessage(
+                            `${data.geo_level} : ${data.location} (${data.year}) - ` +
+                            `Ratio: ${data.ratio} hommes pour 100 femmes | ` +
+                            `Hommes: ${data.percentage_men}% | Femmes: ${data.percentage_women}%`,
+                            false
+                        );
+                    } else {
+                        // Afficher un message d'erreur
+                        showMessage(data.message, true);
+                        plotlyChart.innerHTML = '';
+                    }
+                })
+                .catch(error => {
+                    // Gestion des erreurs de requête
+                    console.error('Erreur:', error);
+                    showMessage('Erreur lors du chargement des données', true);
+                    plotlyChart.innerHTML = '';
+                });
+        }
+        
+        // Écouteurs d'événements sur les menus déroulants
+        geoLevelSelect.addEventListener('change', updateLocationList);
+        locationSelect.addEventListener('change', loadChart);
+        yearSelect.addEventListener('change', loadChart);
+        
+        // Initialisation au chargement de la page
+        updateLocationList();
+    </script>
+    {% endif %}
+
+</body>
+</html>

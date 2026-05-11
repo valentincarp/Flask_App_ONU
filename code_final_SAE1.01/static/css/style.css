@@ -1,0 +1,303 @@
+/* static/css/style.css */
+
+/* --- 1. CONFIGURATION GÉNÉRALE & VARIABLES --- */
+:root {
+    /* Palette de couleurs "Dashboard Modern" */
+    --primary-color: #2c3e50;    /* Bleu Nuit (Header, Titres) */
+    --secondary-color: #34495e;  /* Bleu Nuit clair (Menu) */
+    --accent-color: #27ae60;     /* Vert (Boutons, Actions, Actif) */
+    --accent-hover: #219150;     /* Vert foncé (Survol) */
+    --bg-body: #f4f7f6;          /* Gris très clair (Fond de page) */
+    --bg-card: #ffffff;          /* Blanc (Fond des blocs) */
+    --text-main: #333333;        /* Texte principal */
+    --text-light: #7f8c8d;       /* Texte secondaire */
+    --border-color: #e0e0e0;     /* Bordures douces */
+    --shadow: 0 4px 6px rgba(0,0,0,0.08); /* Ombre douce */
+}
+
+/* Importation Police propre système (plus rapide que Google Fonts) */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+h1, h2, h3 { color: var(--primary-color); font-weight: 600; margin-top: 0; }
+a { text-decoration: none; color: inherit; transition: all 0.3s ease; }
+img { height: auto; max-width: 100%; }
+
+/* --- 2. HEADER & NAVIGATION --- */
+header {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header h1 {
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 1.4rem;
+    color: white;
+    font-weight: 400;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+}
+
+#worldmap {
+    height: 32px;
+    width: auto;
+    margin-right: 15px;
+    vertical-align: middle;
+}
+
+/* Menu Principal */
+.menu {
+    display: flex;
+    flex-wrap: wrap;
+    background-color: var(--secondary-color);
+    padding: 0 10px;
+}
+
+.menu a {
+    padding: 14px 18px;
+    color: #ecf0f1;
+    font-size: 0.95rem;
+    border-bottom: 3px solid transparent;
+}
+
+.menu a:hover {
+    background-color: rgba(255,255,255,0.05);
+    color: white;
+}
+
+.menu a.active {
+    color: white;
+    border-bottom-color: var(--accent-color); /* Ligne verte sous l'onglet actif */
+    background-color: rgba(255,255,255,0.05);
+}
+
+/* Lien "À propos" à droite */
+#about { margin-left: auto; }
+#about::before { content: "ℹ "; margin-right: 5px; }
+
+/* Sous-menu (Tableau / Graphe) */
+.submenu {
+    background-color: white;
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.submenu a {
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    border: 1px solid transparent;
+}
+
+.submenu a:hover {
+    background-color: #f1f2f6;
+    color: var(--primary-color);
+}
+
+.submenu a.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* --- 3. CONTENEURS PRINCIPAUX (Cartes) --- */
+/* Classe générique pour tous les conteneurs principaux */
+.dashboard_container, 
+.content-container, 
+.game-container, 
+.filter-container,
+.controls-container,
+.table-container {
+    max-width: 1200px;
+    margin: 25px auto;
+    padding: 25px;
+    background-color: var(--bg-card);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+/* Conteneurs spécifiques pour Graphes et Cartes */
+.plot-container, .map-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+}
+
+/* --- 4. DASHBOARD (Grille de stats) --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.stat-block {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 5px solid var(--accent-color); /* Bordure verte à gauche */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s;
+}
+
+.stat-block:hover { transform: translateY(-3px); }
+
+.stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 10px 0;
+}
+.stat-description { color: var(--text-light); font-size: 0.9rem; }
+
+/* --- 5. ÉLÉMENTS DE FORMULAIRE & BOUTONS --- */
+/* Boutons */
+.btn, button {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    text-align: center;
+}
+
+.btn:hover, button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+/* Bouton spécial Export (Vert) */
+.btn-export {
+    background-color: var(--accent-color);
+    color: white !important;
+}
+.btn-export:hover { background-color: var(--accent-hover); }
+
+/* Boutons standards */
+button[type="submit"] { background-color: var(--primary-color); color: white; }
+button[type="button"] { background-color: #95a5a6; color: white; } /* Gris pour reset */
+
+/* Inputs */
+input[type="text"], input[type="number"], select {
+    padding: 10px;
+    border: 1px solid #ced6e0;
+    border-radius: 5px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.3s;
+}
+input:focus, select:focus { border-color: var(--primary-color); }
+
+/* --- 6. PAGE MIGRATION & RATIO (Filtres) --- */
+/* Mise en page des filtres horizontalement */
+.filter-container form, .controls-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+    background-color: #f8f9fa; /* Fond gris très clair pour la zone filtre */
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.filter-group, .control-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label, .control-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.filter-group select, .control-group select { width: 100%; }
+
+/* --- 7. PAGE JEU (Styles intégrés) --- */
+.game-info { text-align: center; margin-bottom: 30px; }
+
+.game-types { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; }
+
+.game-type-button {
+    padding: 12px 25px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+    color: var(--text-main);
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.game-type-button:hover { background-color: #f1f2f6; transform: translateY(-2px); }
+
+.game-type-button.active {
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+.question-box {
+    background-color: white;
+    border: 2px solid var(--accent-color);
+    border-radius: 10px;
+    padding: 30px;
+    font-size: 1.4rem;
+    font-weight: bold;
+    text-align: center;
+    color: var(--primary-color);
+    margin: 20px 0;
+    box-shadow: 0 4px 10px rgba(39, 174, 96, 0.1);
+}
+
+.hint-box {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid #bbdefb;
+}
+
+.message { padding: 15px; border-radius: 6px; text-align: center; margin: 15px 0; font-weight: bold; }
+.message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+.history-table th { background-color: var(--secondary-color); color: white; }
+.attempts-counter { text-align: center; font-size: 1.1rem; color: var(--text-light); }
+
+/* --- 8. DATATABLES (Surcharge pour harmonisation) --- */
+table.dataTable thead th {
+    background-color: var(--secondary-color) !important; /* En-tête bleu */
+    color: white !important;
+    padding: 12px !important;
+}
+
+table.dataTable tbody td { padding: 10px !important; }
+table.dataTable.display tbody tr.odd { background-color: #fcfcfc !important; }
+table.dataTable.display tbody tr:hover { background-color: #e8f6f3 !important; /* Survol vert très clair */ }
+
+/* Utilitaires */
+.center-box { text-align: center; margin: 20px 0; }
+.no-data { text-align: center; font-style: italic; color: var(--text-light); padding: 20px; }

@@ -1,0 +1,94 @@
+<header>  
+    <h1>
+        <img id="worldmap" src="{{ url_for('static', filename='images/favicon.png') }}"/>
+        <b>Analyse démographique mondiale</b> &nbsp;|&nbsp; {{ title }}
+    </h1>
+
+    <div class="menu">
+        <a href="/?query=world&view=table" {% if query_type == 'world' %} class="active"{% endif %}>Monde</a>
+        <a href="/?query=region&view=table" {% if query_type == 'region' %} class="active"{% endif %}>Régions</a>
+        
+        <a href="/life/" {% if query_type == 'lifeexp' %} class="active"{% endif %}>Espérance Vie</a>
+        <a href="/migration?view=table" {% if query_type == 'migration' %} class="active"{% endif %}>Migration</a>
+        <a href="/ratio?view=table" {% if query_type == 'ratio' %} class="active"{% endif %}>Taux H/F</a>
+        <a href="/ratio_male?view=table" {% if query_type == 'ratio_country' %} class="active"{% endif %}>Ratio H/F</a>
+        
+        <a href="/dashboard" {% if request.path == '/dashboard' %}class="active"{% endif %}>Dashboard</a>
+        <a href="/game" {% if request.path == '/game' %}class="active"{% endif %}>JEU</a>
+        
+        <a id="about" href="/?query=about&view=text" {% if query_type == 'about' %}class="active"{% endif %}>À propos</a>
+    </div>
+
+    {% if query_type in ['world', 'region', 'top10', 'europe', 'vital', 'ratio_country', 'migration'] or request.path == '/forecast' or request.path == '/ratio_male' %}
+        <div class="submenu">
+            
+            {% if request.path == '/ratio_male' or query_type == 'ratio_country' %}
+                <a href="/ratio_male?view=table" 
+                   class="{% if view_type == 'table' %}active{% endif %}">
+                   Tableau
+                </a>
+                <a href="/ratio_male?view=pie" 
+                   class="{% if view_type == 'pie' %}active{% endif %}">
+                   Diagramme circulaire
+                </a>
+
+            {% elif query_type == 'migration' %}
+                <a href="/migration?view=table" 
+                   class="{% if view_type == 'table' %}active{% endif %}">
+                   Tableau
+                </a>
+                <a href="/migration?view=graph" 
+                   class="{% if view_type == 'graph' %}active{% endif %}">
+                   diagramme circulaire
+                </a>
+
+            {% elif request.path == '/forecast' %}
+                <a href="/forecast?kind={{ request.args.get('kind') }}&view=table" 
+                   class="{% if view_type == 'table' %}active{% endif %}">
+                   Tableau
+                </a>
+                <a href="/forecast?kind={{ request.args.get('kind') }}&view=graph" 
+                   class="{% if view_type == 'graph' %}active{% endif %}">
+                   Graphe
+                </a>
+
+            {% else %}
+                <a href="/?query={{ query_type }}&view=table" 
+                   class="{% if view_type == 'table' %}active{% endif %}">
+                   Tableau
+                </a>
+                
+                {% if query_type == 'europe' %}
+                    <a href="/?query={{ query_type }}&view=dens_map" 
+                       class="{% if view_type == 'dens_map' %}active{% endif %}">
+                       Carte densité 2023
+                    </a>    
+                {% else %}
+                    <a href="/?query={{ query_type }}&view=graph" 
+                       class="{% if view_type == 'graph' %}active{% endif %}">
+                       Graphe Historique
+                    </a>
+                {% endif %}
+            {% endif %}
+
+            {% if query_type not in ['top10', 'ratio_country', 'migration'] and request.path != '/ratio_male' %}
+                
+                {% if query_type == 'vital' %}
+                    <a href="/forecast?kind=vital&view=graph" 
+                       class="{% if request.args.get('kind') == 'vital' %}active{% endif %}">
+                       Prévisions (30 ans)
+                    </a>
+                {% else %}
+                    {% if query_type %}
+                    <a href="/forecast?kind={{ query_type }}&view=graph" 
+                       class="{% if request.path == '/forecast' and request.args.get('kind') == query_type %}active{% endif %}">
+                       Prévisions (30 ans)
+                    </a>
+                    {% endif %}
+                {% endif %}
+                
+            {% endif %}
+            
+        </div>
+    {% endif %}
+</header>

@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ADM | {{ title }}</title>
+
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.png') }}" type="image/png">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}"/>
+
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css"/>
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.2.6/css/responsive.dataTables.css"/>
+</head>
+
+<body>
+  {% include 'header.html' %}
+  <div style="text-align: center; margin: 20px;">
+    <a href="{{ url_for('export.download_csv', query='lifeexp', year=2023) }}" 
+       style="background-color: #333; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+       Télécharger Espérance de vie
+    </a>
+</div>
+  <form method="get" action="/life" style="margin:10px 0;">
+    <label>Année :</label>
+    <input type="number" name="year" min="1950" max="2100" value="{{ request.args.get('year','') }}">
+
+    <label>Pays :</label>
+    <input type="text" name="country" placeholder="France" value="{{ request.args.get('country','') }}">
+
+    <label>Vue :</label>
+    <select name="view">
+      <option value="table" {% if view_type == 'table' %}selected{% endif %}>Tableau</option>
+      <option value="graph" {% if view_type == 'graph' %}selected{% endif %}>Graphique</option>
+      <option value="map" {% if view_type == 'map' %}selected{% endif %}>Carte</option>
+    </select>
+
+    <button type="submit">Afficher</button>
+  </form>
+
+  {% if view_type == 'table' %}
+    <table id="dataTable" class="display" width="100%">
+      <thead>
+        <tr>
+          {% for h in headers %}
+            <th>{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for country, life_expectancy in data %}
+          <tr>
+            <td>{{ country }}</td>
+            <td>{{ "{:,.2f}".format(life_expectancy).replace(',', ' ').replace('.', ',') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% elif view_type in ['graph','map'] and plot_html %}
+    <div class="plot-container">
+      {{ plot_html | safe }}
+    </div>
+
+  {% else %}
+    <div><em>Aucune donnée à afficher.</em></div>
+  {% endif %}
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.2.6/js/dataTables.responsive.js"></script>
+
+  <script>
+    $(document).ready(function() {
+      if ($('#dataTable').length) {
+        $('#dataTable').DataTable({
+          language: { url: "https://cdn.datatables.net/plug-ins/1.11.5/i18n/fr-FR.json" },
+          responsive: true,
+          paging: true
+        });
+      }
+    });
+  </script>
+</body>
+</html>
